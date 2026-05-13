@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const analyticsQuerySchema = z.object({
-  uploadId: z.string().uuid(),
+  uploadId: z.union([z.literal("all"), z.string().uuid()]),
   shift: z.string().optional(),
   equipmentType: z.string().optional(),
   from: z.string().optional(),
@@ -22,7 +22,7 @@ export type TorEventRow = {
 };
 
 export type AnalyticsPayload = {
-  uploadId: string;
+  uploadScope: "all" | string;
   filters: z.infer<typeof analyticsQuerySchema>;
   kpis: {
     eventCount: number;
@@ -82,7 +82,7 @@ function monthLabel(m: number | null, dateStr: string | null): { key: string; la
 }
 
 export function buildAnalytics(
-  uploadId: string,
+  uploadScope: "all" | string,
   filters: z.infer<typeof analyticsQuerySchema>,
   rows: TorEventRow[],
   filterOptions?: { shifts: string[]; equipmentTypes: string[] },
@@ -152,7 +152,7 @@ export function buildAnalytics(
     .sort((a, b) => b.dtMin - a.dtMin);
 
   return {
-    uploadId,
+    uploadScope,
     filters,
     kpis: {
       eventCount: rows.length,

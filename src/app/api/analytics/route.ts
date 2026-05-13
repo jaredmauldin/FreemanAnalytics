@@ -4,8 +4,11 @@ import { analyticsQuerySchema, buildAnalytics, type TorEventRow } from "@/lib/to
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const rawUpload = url.searchParams.get("uploadId");
+  const uploadId = !rawUpload || rawUpload === "all" ? "all" : rawUpload;
+
   const parsed = analyticsQuerySchema.safeParse({
-    uploadId: url.searchParams.get("uploadId") ?? "",
+    uploadId,
     shift: url.searchParams.get("shift") || undefined,
     equipmentType: url.searchParams.get("equipmentType") || undefined,
     from: url.searchParams.get("from") || undefined,
@@ -14,23 +17,28 @@ export async function GET(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { uploadId, shift, equipmentType, from, to } = parsed.data;
+  const { uploadId: scope, shift, equipmentType, from, to } = parsed.data;
 
   try {
     const supabase = getSupabaseAdmin();
-    let q = supabase
-      .from("tor_events")
-      .select(
-        "dt_min, shift, equipment_type, specific_equipment, malfunction_type, pdt_edt, month, date_of_error, mttr_min, mtbf_min",
-      )
-      .eq("upload_id", uploadId);
+    const selectCols =
+      "dt_min, shift, equipment_type, specific_equipment, malfunction_type, pdt_edt, month, date_of_error, mttr_min, mtbf_min";
+
+    let q = supabase.from("tor_events").select(selectCols);
+    if (scope !== "all") {
+      q = q.eq("upload_id", scope);
+    }
 
     if (shift) q = q.eq("shift", shift);
     if (equipmentType) q = q.eq("equipment_type", equipmentType);
     if (from) q = q.gte("date_of_error", from);
     if (to) q = q.lte("date_of_error", to);
 
-    const metaQuery = supabase.from("tor_events").select("shift, equipment_type").eq("upload_id", uploadId);
+    let metaQuery = supabase.from("tor_events").select("shift, equipment_type");
+    if (scope !== "all") {
+      metaQuery = metaQuery.eq("upload_id", scope);
+    }
+
     const [filteredRes, metaRes] = await Promise.all([q, metaQuery]);
     if (filteredRes.error) return NextResponse.json({ error: filteredRes.error.message }, { status: 500 });
     if (metaRes.error) return NextResponse.json({ error: metaRes.error.message }, { status: 500 });
@@ -42,7 +50,7 @@ export async function GET(req: Request) {
     shifts.sort();
     equipmentTypes.sort();
 
-    const payload = buildAnalytics(uploadId, parsed.data, (data ?? []) as TorEventRow[], {
+    const payload = buildAnalytics(scope, parsed.data, (data ?? []) as TorEventRow[], {
       shifts,
       equipmentTypes,
     });

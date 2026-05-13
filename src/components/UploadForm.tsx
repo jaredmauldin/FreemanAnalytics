@@ -1,30 +1,65 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
-export function UploadForm() {
+type Props = {
+  onImportComplete?: () => void;
+};
+
+export function UploadForm({ onImportComplete }: Props) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     setMessage(null);
-    const fd = new FormData(e.currentTarget);
-    const file = fd.get("file");
-    if (!(file instanceof File) || file.size === 0) {
-      setMessage("Choose an .xlsm or .xlsx file first.");
+    const f = e.target.files?.[0];
+    if (!f || f.size === 0) {
+      setPendingFile(null);
       return;
     }
+    const lower = f.name.toLowerCase();
+    if (!lower.endsWith(".xlsm") && !lower.endsWith(".xlsx")) {
+      setMessage("Use an .xlsm or .xlsx workbook.");
+      e.target.value = "";
+      setPendingFile(null);
+      return;
+    }
+    setPendingFile(f);
+  }
+
+  function openImportChoice() {
+    setMessage(null);
+    if (!pendingFile) {
+      setMessage("Choose a file first.");
+      return;
+    }
+    setDialogOpen(true);
+  }
+
+  function closeDialog() {
+    if (!busy) setDialogOpen(false);
+  }
+
+  async function runImport(mode: "append" | "replace") {
+    if (!pendingFile) return;
     setBusy(true);
+    setMessage(null);
     try {
       const up = new FormData();
-      up.append("file", file);
+      up.append("file", pendingFile);
+      up.append("mode", mode);
       const res = await fetch("/api/upload", { method: "POST", body: up });
-      const json = await res.json();
+      const json = (await res.json()) as { error?: string; uploadId?: string };
       if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : "Upload failed.");
-      router.push(`/dashboard?upload=${json.uploadId as string}`);
+      setDialogOpen(false);
+      setPendingFile(null);
+      if (formRef.current) formRef.current.reset();
+      onImportComplete?.();
       router.refresh();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Upload failed.");
@@ -34,27 +69,86 @@ export function UploadForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4 sm:flex-row sm:items-end">
-      <div className="flex-1">
-        <label htmlFor="file" className="sr-only">
-          Workbook file
-        </label>
-        <input
-          id="file"
-          name="file"
-          type="file"
-          accept=".xlsm,.xlsx"
-          className="block w-full cursor-pointer text-sm text-[var(--muted)] file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-600"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={busy}
-        className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[var(--background)] disabled:opacity-50"
-      >
-        {busy ? "Importing…" : "Import to Supabase"}
-      </button>
-      {message ? <p className="basis-full text-sm text-red-300">{message}</p> : null}
-    </form>
+    <div className="relative">
+      <form ref={formRef} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end" onSubmit={(e) => e.preventDefault()}>
+        <div className="flex-1 min-w-[200px]">
+          <label htmlFor="tor-file" className="sr-only">
+            Workbook file
+          </label>
+          <input
+            id="tor-file"
+            name="file"
+            type="file"
+            accept=".xlsm,.xlsx"
+            onChange={onPickFile}
+            className="block w-full cursor-pointer text-sm text-[var(--muted)] file:mr-4 file:rounded-lg file:border-0 file:bg-[var(--accent)] file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-600"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={openImportChoice}
+          disabled={busy || !pendingFile}
+          className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-[var(--background)] disabled:opacity-50"
+        >
+          {busy ? "Importing…" : "Import workbook…"}
+        </button>
+        {message ? <p className="basis-full text-sm text-red-300">{message}</p> : null}
+      </form>
+
+      {dialogOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeDialog();
+          }}
+        >
+          <div
+            className="max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="import-dialog-title"
+          >
+            <h3 id="import-dialog-title" className="text-lg font-semibold text-[var(--foreground)]">
+              How should this file be applied?
+            </h3>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              <span className="font-medium text-[var(--foreground)]">{pendingFile?.name}</span> — Duplicate rows (same TOR fingerprint) are merged. Within one file, the last occurrence wins.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void runImport("append")}
+                className="rounded-xl border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-left text-sm hover:border-[var(--accent)] disabled:opacity-50"
+              >
+                <span className="font-semibold text-[var(--foreground)]">Append</span>
+                <span className="mt-1 block text-[var(--muted)]">Add or update rows. Existing data stays; matching rows are upserted (no duplicates).</span>
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (!confirm("Replace wipes all TOR data and uploads in the database, then imports this file. Continue?")) return;
+                  void runImport("replace");
+                }}
+                className="rounded-xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-left text-sm hover:border-red-500 disabled:opacity-50"
+              >
+                <span className="font-semibold text-red-200">Replace all</span>
+                <span className="mt-1 block text-red-200/80">Delete every TOR row and import history, then import this workbook only.</span>
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={closeDialog}
+                className="mt-1 rounded-lg px-3 py-2 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
