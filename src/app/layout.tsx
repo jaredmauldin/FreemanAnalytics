@@ -4,7 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "Freeman Analytics — TOR Import",
+  title: "Freeman Analytics — TOR (Auth v2)",
   description: "Upload injection molding TOR spreadsheets and explore downtime analytics.",
 };
 
