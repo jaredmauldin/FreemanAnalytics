@@ -1,0 +1,23 @@
+export type TorEventInput = {
+  work_order_number: number | null;
+  equipment_location: string | null;
+  equipment_type: string | null;
+  specific_equipment: string | null;
+  malfunction_type: string | null;
+  failure_modes: string | null;
+  failure_causes: string | null;
+  error_message: string | null;
+  symptoms: string | null;
+  corrective_measures: string | null;
+  pdt_edt: string | null;
+  dt_min: number | null;
+  shift: string | null;
+  month: number | null;
+  date_of_error: string | null;
+  technicians_name: string | null;
+  week_number: number | null;
+  num_pdt_calls: number | null;
+  total_pdt_min: number | null;
+  mttr_min: number | null;
+  mtbf_min: number | null;
+};
