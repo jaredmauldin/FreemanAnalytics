@@ -50,16 +50,17 @@ function NavDropdown({
 
   useEffect(() => {
     if (!open) return;
-    function onDoc(e: MouseEvent) {
+    /** Capture + pointer: reliable on touch/Safari; runs before target handlers so we don’t fight Clerk overlays. */
+    function onDoc(e: PointerEvent) {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) close();
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close();
     }
-    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("pointerdown", onDoc, true);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("pointerdown", onDoc, true);
       document.removeEventListener("keydown", onKey);
     };
   }, [open, close]);
@@ -75,7 +76,7 @@ function NavDropdown({
         aria-controls={`submenu-${menuId}`}
         id={`menubutton-${menuId}`}
         onClick={() => setOpen((o) => !o)}
-        className={`flex items-center gap-0.5 rounded-md px-2 py-1 transition-colors ${
+        className={`touch-manipulation flex items-center gap-0.5 rounded-md px-2 py-1 transition-colors ${
           sectionActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"
         }`}
       >
@@ -89,7 +90,7 @@ function NavDropdown({
           id={`submenu-${menuId}`}
           role="menu"
           aria-labelledby={`menubutton-${menuId}`}
-          className="absolute left-0 top-[calc(100%+4px)] z-[200] min-w-[220px] rounded-lg border border-[#243041] bg-[#0f1623] py-1 shadow-xl"
+          className="pointer-events-auto absolute left-0 top-[calc(100%+4px)] z-[200] min-w-[220px] rounded-lg border border-[#243041] bg-[#0f1623] py-1 shadow-xl"
         >
           {links.map((item) => {
             const subActive =
@@ -120,7 +121,7 @@ export function AppNav({ isAdmin }: Props) {
   const pathname = usePathname() ?? "";
 
   return (
-    <nav className="flex flex-wrap items-center gap-1 text-sm font-medium" aria-label="Main">
+    <nav className="relative isolate flex flex-wrap items-center gap-1 text-sm font-medium" aria-label="Main">
       <NavDropdown label="Data" pathname={pathname} sectionPrefix="/data" links={DATA_LINKS} />
       <NavDropdown label="Analytics" pathname={pathname} sectionPrefix="/analytics" links={ANALYTICS_LINKS} />
       {isAdmin ? <NavDropdown label="Admin" pathname={pathname} sectionPrefix="/admin" links={ADMIN_LINKS} /> : null}

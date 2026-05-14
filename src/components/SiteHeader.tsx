@@ -26,7 +26,7 @@ export function SiteHeader({ serverIsAdmin = false }: { serverIsAdmin?: boolean 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/35 to-transparent" />
       <div className="mx-auto max-w-6xl px-4 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="relative z-[120] flex flex-wrap items-center gap-x-4 gap-y-2">
             <FreemanBrand href="/analytics" variant="header" />
             <span className="hidden h-6 w-px bg-[#243041] sm:block" aria-hidden />
             <p className="hidden text-xs text-zinc-500 sm:block sm:max-w-[200px] md:max-w-xs">
