@@ -20,6 +20,10 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
   const [monthKey, setMonthKey] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [enteredFrom, setEnteredFrom] = useState("");
+  const [enteredTo, setEnteredTo] = useState("");
+  const [minHours, setMinHours] = useState("");
+  const [maxHours, setMaxHours] = useState("");
   const [data, setData] = useState<SupervisorOtAnalyticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -32,9 +36,25 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
     if (monthKey) p.set("monthKey", monthKey);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
+    if (enteredFrom) p.set("enteredFrom", enteredFrom);
+    if (enteredTo) p.set("enteredTo", enteredTo);
+    if (minHours) p.set("minHours", minHours);
+    if (maxHours) p.set("maxHours", maxHours);
     if (refreshKey) p.set("_r", String(refreshKey));
     return p.toString();
-  }, [uploadScope, employeeName, volunteeredMandated, monthKey, from, to, refreshKey]);
+  }, [
+    uploadScope,
+    employeeName,
+    volunteeredMandated,
+    monthKey,
+    from,
+    to,
+    enteredFrom,
+    enteredTo,
+    minHours,
+    maxHours,
+    refreshKey,
+  ]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,6 +84,10 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
     setMonthKey("");
     setFrom("");
     setTo("");
+    setEnteredFrom("");
+    setEnteredTo("");
+    setMinHours("");
+    setMaxHours("");
   }, []);
 
   const filterSummary = useMemo(() => {
@@ -71,10 +95,14 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
     if (employeeName) parts.push(`Employee: ${employeeName}`);
     if (volunteeredMandated) parts.push(`Type: ${volunteeredMandated}`);
     if (monthKey) parts.push(`Month: ${monthKey}`);
-    if (from) parts.push(`From: ${from}`);
-    if (to) parts.push(`To: ${to}`);
+    if (from) parts.push(`Work date from: ${from}`);
+    if (to) parts.push(`Work date to: ${to}`);
+    if (enteredFrom) parts.push(`Entered from: ${enteredFrom}`);
+    if (enteredTo) parts.push(`Entered to: ${enteredTo}`);
+    if (minHours) parts.push(`Min hours: ${minHours}`);
+    if (maxHours) parts.push(`Max hours: ${maxHours}`);
     return parts;
-  }, [employeeName, volunteeredMandated, monthKey, from, to]);
+  }, [employeeName, volunteeredMandated, monthKey, from, to, enteredFrom, enteredTo, minHours, maxHours]);
   const hasActiveFilters = filterSummary.length > 0;
 
   if (loading && !data) {
@@ -118,7 +146,7 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <p className="text-sm text-[var(--muted)]">
           Scope: <span className="text-[var(--foreground)]">{scopeLabel}</span>
           {uploadScope !== "all" ? (
@@ -127,52 +155,98 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
             </Link>
           ) : null}
         </p>
-        <label className="text-xs text-[var(--muted)]">
-          Employee
-          <select
-            value={employeeName}
-            onChange={(e) => setEmployeeName(e.target.value)}
-            className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Employee</span>
+            <select
+              value={employeeName}
+              onChange={(e) => setEmployeeName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.employees.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Work date from</span>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setMonthKey("");
+              }}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Work date to</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setMonthKey("");
+              }}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Entered at from</span>
+            <input
+              type="date"
+              value={enteredFrom}
+              onChange={(e) => setEnteredFrom(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Entered at to</span>
+            <input
+              type="date"
+              value={enteredTo}
+              onChange={(e) => setEnteredTo(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Min hours</span>
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              placeholder="Any"
+              value={minHours}
+              onChange={(e) => setMinHours(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm tabular-nums"
+            />
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Max hours</span>
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              placeholder="Any"
+              value={maxHours}
+              onChange={(e) => setMaxHours(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm tabular-nums"
+            />
+          </label>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
           >
-            <option value="">All</option>
-            {data.filterOptions.employees.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs text-[var(--muted)]">
-          From
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => {
-              setFrom(e.target.value);
-              setMonthKey("");
-            }}
-            className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
-          />
-        </label>
-        <label className="text-xs text-[var(--muted)]">
-          To
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => {
-              setTo(e.target.value);
-              setMonthKey("");
-            }}
-            className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={clearAllFilters}
-          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
-        >
-          Reset filters
-        </button>
+            Reset filters
+          </button>
+        </div>
       </div>
 
       {empty ? (

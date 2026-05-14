@@ -3,6 +3,8 @@ import { z } from "zod";
 export const exteriorAnalyticsQuerySchema = z.object({
   uploadId: z.union([z.literal("all"), z.string().uuid()]),
   department: z.string().optional(),
+  functionalLocation: z.string().optional(),
+  machine: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
   alarmFault: z.string().optional(),
@@ -26,7 +28,7 @@ export type ExteriorAnalyticsPayload = {
   byAlarmFault: { name: string; count: number }[];
   byRootCause: { name: string; count: number }[];
   byMachine: { name: string; count: number }[];
-  filterOptions: { departments: string[] };
+  filterOptions: { departments: string[]; functionalLocations: string[]; machines: string[] };
 };
 
 function bucketCount(rows: ExteriorFlatRow[], keyFn: (r: ExteriorFlatRow) => string, top = 15) {
@@ -46,11 +48,17 @@ export function buildExteriorAnalytics(
   uploadScope: "all" | string,
   filters: z.infer<typeof exteriorAnalyticsQuerySchema>,
   rows: ExteriorFlatRow[],
-  filterOptions?: { departments: string[] },
+  filterOptions?: { departments: string[]; functionalLocations: string[]; machines: string[] },
 ): ExteriorAnalyticsPayload {
   let filtered = rows;
   if (filters.department) {
     filtered = filtered.filter((r) => r.department === filters.department);
+  }
+  if (filters.functionalLocation) {
+    filtered = filtered.filter((r) => (r.functional_location ?? "") === filters.functionalLocation);
+  }
+  if (filters.machine) {
+    filtered = filtered.filter((r) => (r.machine ?? "") === filters.machine);
   }
   if (filters.alarmFault) {
     filtered = filtered.filter((r) => (r.alarm_fault ?? "") === filters.alarmFault);
@@ -68,6 +76,11 @@ export function buildExteriorAnalytics(
   const departments =
     filterOptions?.departments ??
     ([...new Set(rows.map((r) => r.department).filter(Boolean))] as string[]).sort();
+  const functionalLocations =
+    filterOptions?.functionalLocations ??
+    ([...new Set(rows.map((r) => r.functional_location).filter(Boolean))] as string[]).sort();
+  const machines =
+    filterOptions?.machines ?? ([...new Set(rows.map((r) => r.machine).filter(Boolean))] as string[]).sort();
 
   return {
     uploadScope,
@@ -77,6 +90,6 @@ export function buildExteriorAnalytics(
     byAlarmFault: bucketCount(filtered, (r) => r.alarm_fault ?? ""),
     byRootCause: bucketCount(filtered, (r) => r.root_cause ?? ""),
     byMachine: bucketCount(filtered, (r) => r.machine ?? ""),
-    filterOptions: { departments },
+    filterOptions: { departments, functionalLocations, machines },
   };
 }

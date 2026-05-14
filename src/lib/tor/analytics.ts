@@ -6,6 +6,12 @@ export const analyticsQuerySchema = z.object({
   equipmentType: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  /** TOR sheet month number (1–12) */
+  recordMonth: z.string().optional(),
+  equipmentLocation: z.string().optional(),
+  failureModes: z.string().optional(),
+  failureCauses: z.string().optional(),
+  technicianName: z.string().optional(),
   /** Chart drill: exact specific_equipment match */
   specificEquipment: z.string().optional(),
   /** Chart drill: exact malfunction_type match */
@@ -20,8 +26,12 @@ export type TorEventRow = {
   dt_min: number | null;
   shift: string | null;
   equipment_type: string | null;
+  equipment_location: string | null;
   specific_equipment: string | null;
   malfunction_type: string | null;
+  failure_modes: string | null;
+  failure_causes: string | null;
+  technicians_name: string | null;
   pdt_edt: string | null;
   month: number | null;
   date_of_error: string | null;
@@ -47,6 +57,10 @@ export type AnalyticsPayload = {
   filterOptions: {
     shifts: string[];
     equipmentTypes: string[];
+    equipmentLocations: string[];
+    failureModes: string[];
+    failureCauses: string[];
+    technicians: string[];
   };
 };
 
@@ -93,14 +107,34 @@ export function buildAnalytics(
   uploadScope: "all" | string,
   filters: z.infer<typeof analyticsQuerySchema>,
   rows: TorEventRow[],
-  filterOptions?: { shifts: string[]; equipmentTypes: string[] },
+  filterOptions?: {
+    shifts: string[];
+    equipmentTypes: string[];
+    equipmentLocations: string[];
+    failureModes: string[];
+    failureCauses: string[];
+    technicians: string[];
+  },
 ): AnalyticsPayload {
   const shifts = filterOptions?.shifts ?? ([...new Set(rows.map((r) => r.shift).filter(Boolean))] as string[]);
   const equipmentTypes =
     filterOptions?.equipmentTypes ??
     ([...new Set(rows.map((r) => r.equipment_type).filter(Boolean))] as string[]);
+  const equipmentLocations =
+    filterOptions?.equipmentLocations ??
+    ([...new Set(rows.map((r) => r.equipment_location).filter(Boolean))] as string[]);
+  const failureModes =
+    filterOptions?.failureModes ?? ([...new Set(rows.map((r) => r.failure_modes).filter(Boolean))] as string[]);
+  const failureCauses =
+    filterOptions?.failureCauses ?? ([...new Set(rows.map((r) => r.failure_causes).filter(Boolean))] as string[]);
+  const technicians =
+    filterOptions?.technicians ?? ([...new Set(rows.map((r) => r.technicians_name).filter(Boolean))] as string[]);
   shifts.sort();
   equipmentTypes.sort();
+  equipmentLocations.sort();
+  failureModes.sort();
+  failureCauses.sort();
+  technicians.sort();
 
   const totalDt = sumDt(rows);
   const mttrVals = rows.map((r) => r.mttr_min).filter((v): v is number => v !== null && Number.isFinite(v));
@@ -174,6 +208,13 @@ export function buildAnalytics(
     pdtVsEdt,
     byShift,
     byEquipmentType,
-    filterOptions: { shifts, equipmentTypes },
+    filterOptions: {
+      shifts,
+      equipmentTypes,
+      equipmentLocations,
+      failureModes,
+      failureCauses,
+      technicians,
+    },
   };
 }

@@ -16,6 +16,8 @@ type Props = {
 
 export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
   const [department, setDepartment] = useState("");
+  const [functionalLocation, setFunctionalLocation] = useState("");
+  const [machine, setMachine] = useState("");
   const [alarmFault, setAlarmFault] = useState("");
   const [rootCause, setRootCause] = useState("");
   const [from, setFrom] = useState("");
@@ -28,13 +30,15 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
     const p = new URLSearchParams();
     p.set("uploadId", uploadScope);
     if (department) p.set("department", department);
+    if (functionalLocation) p.set("functionalLocation", functionalLocation);
+    if (machine) p.set("machine", machine);
     if (alarmFault) p.set("alarmFault", alarmFault);
     if (rootCause) p.set("rootCause", rootCause);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     if (refreshKey) p.set("_r", String(refreshKey));
     return p.toString();
-  }, [uploadScope, department, alarmFault, rootCause, from, to, refreshKey]);
+  }, [uploadScope, department, functionalLocation, machine, alarmFault, rootCause, from, to, refreshKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +64,8 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
 
   const clearAllFilters = useCallback(() => {
     setDepartment("");
+    setFunctionalLocation("");
+    setMachine("");
     setAlarmFault("");
     setRootCause("");
     setFrom("");
@@ -69,12 +75,14 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
   const filterSummary = useMemo(() => {
     const parts: string[] = [];
     if (department) parts.push(`Department: ${department}`);
+    if (functionalLocation) parts.push(`Functional location: ${functionalLocation}`);
+    if (machine) parts.push(`Machine: ${machine}`);
     if (alarmFault) parts.push(`Alarm / fault: ${alarmFault}`);
     if (rootCause) parts.push(`Root cause: ${rootCause}`);
     if (from) parts.push(`From: ${from}`);
     if (to) parts.push(`To: ${to}`);
     return parts;
-  }, [department, alarmFault, rootCause, from, to]);
+  }, [department, functionalLocation, machine, alarmFault, rootCause, from, to]);
   const hasActiveFilters = filterSummary.length > 0;
 
   if (loading && !data) {
@@ -118,7 +126,7 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <p className="text-sm text-[var(--muted)]">
           Scope: <span className="text-[var(--foreground)]">{scopeLabel}</span>
           {uploadScope !== "all" ? (
@@ -127,46 +135,80 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
             </Link>
           ) : null}
         </p>
-        <label className="text-xs text-[var(--muted)]">
-          Department
-          <select
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Department</span>
+            <select
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.departments.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Functional location</span>
+            <select
+              value={functionalLocation}
+              onChange={(e) => setFunctionalLocation(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.functionalLocations.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Machine</span>
+            <select
+              value={machine}
+              onChange={(e) => setMachine(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.machines.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Created from</span>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs text-[var(--muted)]">
+            <span className="font-medium uppercase tracking-wide">Created to</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
           >
-            <option value="">All</option>
-            {data.filterOptions.departments.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs text-[var(--muted)]">
-          From
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
-          />
-        </label>
-        <label className="text-xs text-[var(--muted)]">
-          To
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={clearAllFilters}
-          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
-        >
-          Reset filters
-        </button>
+            Reset filters
+          </button>
+        </div>
       </div>
 
       {empty ? (

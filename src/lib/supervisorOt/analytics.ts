@@ -5,6 +5,11 @@ export const supervisorOtAnalyticsQuerySchema = z.object({
   employeeName: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  /** entered_at date (YYYY-MM-DD), start of local UTC day */
+  enteredFrom: z.string().optional(),
+  enteredTo: z.string().optional(),
+  minHours: z.string().optional(),
+  maxHours: z.string().optional(),
   volunteeredMandated: z.string().optional(),
   /** YYYY-MM work_date month (UTC) */
   monthKey: z.string().optional(),
@@ -55,6 +60,22 @@ export function buildSupervisorOtAnalytics(
       const mk = monthKey(r.work_date);
       return mk?.key === filters.monthKey;
     });
+  }
+  if (filters.enteredFrom) {
+    const start = `${filters.enteredFrom}T00:00:00.000Z`;
+    filtered = filtered.filter((r) => (r.entered_at ?? "") >= start);
+  }
+  if (filters.enteredTo) {
+    const end = `${filters.enteredTo}T23:59:59.999Z`;
+    filtered = filtered.filter((r) => (r.entered_at ?? "") <= end);
+  }
+  const minH = filters.minHours ? Number(filters.minHours) : NaN;
+  if (Number.isFinite(minH)) {
+    filtered = filtered.filter((r) => (Number(r.hours) || 0) >= minH);
+  }
+  const maxH = filters.maxHours ? Number(filters.maxHours) : NaN;
+  if (Number.isFinite(maxH)) {
+    filtered = filtered.filter((r) => (Number(r.hours) || 0) <= maxH);
   }
   if (filters.from) {
     filtered = filtered.filter((r) => (r.work_date ?? "") >= filters.from!);

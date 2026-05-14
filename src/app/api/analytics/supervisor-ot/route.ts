@@ -16,13 +16,28 @@ export async function GET(req: Request) {
     employeeName: url.searchParams.get("employeeName") || undefined,
     from: url.searchParams.get("from") || undefined,
     to: url.searchParams.get("to") || undefined,
+    enteredFrom: url.searchParams.get("enteredFrom") || undefined,
+    enteredTo: url.searchParams.get("enteredTo") || undefined,
+    minHours: url.searchParams.get("minHours") || undefined,
+    maxHours: url.searchParams.get("maxHours") || undefined,
     volunteeredMandated: url.searchParams.get("volunteeredMandated") || undefined,
     monthKey: url.searchParams.get("monthKey") || undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { uploadId: scope, employeeName, from, to, volunteeredMandated, monthKey } = parsed.data;
+  const {
+    uploadId: scope,
+    employeeName,
+    from,
+    to,
+    enteredFrom,
+    enteredTo,
+    minHours,
+    maxHours,
+    volunteeredMandated,
+    monthKey,
+  } = parsed.data;
 
   function otMonthBounds(key: string): { start: string; end: string } | null {
     const m = /^(\d{4})-(\d{2})$/.exec(key);
@@ -55,6 +70,13 @@ export async function GET(req: Request) {
     }
     if (from) q = q.gte("work_date", from);
     if (to) q = q.lte("work_date", to);
+    if (enteredFrom) q = q.gte("entered_at", `${enteredFrom}T00:00:00.000Z`);
+    if (enteredTo) q = q.lte("entered_at", `${enteredTo}T23:59:59.999Z`);
+
+    const minH = minHours ? Number(minHours) : NaN;
+    if (Number.isFinite(minH)) q = q.gte("hours", minH);
+    const maxH = maxHours ? Number(maxHours) : NaN;
+    if (Number.isFinite(maxH)) q = q.lte("hours", maxH);
 
     let metaQuery = supabase.from("v_supervisor_ot_flat").select("employee_name");
     if (scope !== "all") metaQuery = metaQuery.eq("upload_id", scope);

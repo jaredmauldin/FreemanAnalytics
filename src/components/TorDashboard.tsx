@@ -41,6 +41,11 @@ type Props = {
 export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
   const [shift, setShift] = useState("");
   const [equipmentType, setEquipmentType] = useState("");
+  const [recordMonth, setRecordMonth] = useState("");
+  const [equipmentLocation, setEquipmentLocation] = useState("");
+  const [failureModes, setFailureModes] = useState("");
+  const [failureCauses, setFailureCauses] = useState("");
+  const [technicianName, setTechnicianName] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [specificEquipment, setSpecificEquipment] = useState("");
@@ -57,6 +62,11 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
     p.set("uploadId", uploadScope);
     if (shift) p.set("shift", shift);
     if (equipmentType) p.set("equipmentType", equipmentType);
+    if (recordMonth) p.set("recordMonth", recordMonth);
+    if (equipmentLocation) p.set("equipmentLocation", equipmentLocation);
+    if (failureModes) p.set("failureModes", failureModes);
+    if (failureCauses) p.set("failureCauses", failureCauses);
+    if (technicianName) p.set("technicianName", technicianName);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     if (specificEquipment) p.set("specificEquipment", specificEquipment);
@@ -69,6 +79,11 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
     uploadScope,
     shift,
     equipmentType,
+    recordMonth,
+    equipmentLocation,
+    failureModes,
+    failureCauses,
+    technicianName,
     from,
     to,
     specificEquipment,
@@ -103,6 +118,11 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
   const clearAllFilters = useCallback(() => {
     setShift("");
     setEquipmentType("");
+    setRecordMonth("");
+    setEquipmentLocation("");
+    setFailureModes("");
+    setFailureCauses("");
+    setTechnicianName("");
     setFrom("");
     setTo("");
     setSpecificEquipment("");
@@ -115,6 +135,11 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
     const parts: string[] = [];
     if (shift) parts.push(`Shift: ${shift}`);
     if (equipmentType) parts.push(`Equipment type: ${equipmentType}`);
+    if (recordMonth) parts.push(`Record month #: ${recordMonth}`);
+    if (equipmentLocation) parts.push(`Location: ${equipmentLocation}`);
+    if (failureModes) parts.push(`Failure mode: ${failureModes}`);
+    if (failureCauses) parts.push(`Failure cause: ${failureCauses}`);
+    if (technicianName) parts.push(`Technician: ${technicianName}`);
     if (specificEquipment) parts.push(`Equipment: ${specificEquipment}`);
     if (malfunctionType) parts.push(`Malfunction: ${malfunctionType}`);
     if (pdtEdt) parts.push(`PDT/EDT: ${pdtEdt}`);
@@ -122,7 +147,21 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
     if (from) parts.push(`From: ${from}`);
     if (to) parts.push(`To: ${to}`);
     return parts;
-  }, [shift, equipmentType, specificEquipment, malfunctionType, pdtEdt, monthKey, from, to]);
+  }, [
+    shift,
+    equipmentType,
+    recordMonth,
+    equipmentLocation,
+    failureModes,
+    failureCauses,
+    technicianName,
+    specificEquipment,
+    malfunctionType,
+    pdtEdt,
+    monthKey,
+    from,
+    to,
+  ]);
   const hasActiveFilters = filterSummary.length > 0;
 
   if (loading && !data) {
@@ -186,70 +225,153 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
         </div>
       ) : null}
 
-      <div className="flex flex-wrap items-end gap-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Shift</label>
-          <select
-            value={shift}
-            onChange={(e) => setShift(e.target.value)}
-            className="mt-1 min-w-[140px] rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+      <div className="space-y-4 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Shift</label>
+            <select
+              value={shift}
+              onChange={(e) => setShift(e.target.value)}
+              className="mt-1 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.shifts.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+              Equipment type
+            </label>
+            <select
+              value={equipmentType}
+              onChange={(e) => setEquipmentType(e.target.value)}
+              className="mt-1 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.equipmentTypes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+              Equipment location
+            </label>
+            <select
+              value={equipmentLocation}
+              onChange={(e) => setEquipmentLocation(e.target.value)}
+              className="mt-1 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.equipmentLocations.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+              Sheet month #
+            </label>
+            <select
+              value={recordMonth}
+              onChange={(e) => setRecordMonth(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                <option key={m} value={String(m)}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Failure mode</label>
+            <select
+              value={failureModes}
+              onChange={(e) => setFailureModes(e.target.value)}
+              className="mt-1 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.failureModes.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Failure cause</label>
+            <select
+              value={failureCauses}
+              onChange={(e) => setFailureCauses(e.target.value)}
+              className="mt-1 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.failureCauses.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Technician</label>
+            <select
+              value={technicianName}
+              onChange={(e) => setTechnicianName(e.target.value)}
+              className="mt-1 w-full min-w-0 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            >
+              <option value="">All</option>
+              {data.filterOptions.technicians.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Error date from</label>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => {
+                setFrom(e.target.value);
+                setMonthKey("");
+              }}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Error date to</label>
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => {
+                setTo(e.target.value);
+                setMonthKey("");
+              }}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
           >
-            <option value="">All</option>
-            {data.filterOptions.shifts.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            Reset filters
+          </button>
         </div>
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-            Equipment type
-          </label>
-          <select
-            value={equipmentType}
-            onChange={(e) => setEquipmentType(e.target.value)}
-            className="mt-1 min-w-[200px] rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-          >
-            <option value="">All</option>
-            {data.filterOptions.equipmentTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">From</label>
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => {
-              setFrom(e.target.value);
-              setMonthKey("");
-            }}
-            className="mt-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium uppercase tracking-wide text-[var(--muted)]">To</label>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => {
-              setTo(e.target.value);
-              setMonthKey("");
-            }}
-            className="mt-1 rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={clearAllFilters}
-          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
-        >
-          Reset filters
-        </button>
       </div>
 
       {!empty ? (
