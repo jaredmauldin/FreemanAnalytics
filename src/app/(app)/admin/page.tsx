@@ -29,7 +29,7 @@ export default async function AdminPage() {
             <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">appAccess: approved</code> automatically. Set it to{" "}
             <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">false</code> to require approval on the{" "}
             <Link className="text-[var(--accent)] hover:underline" href="/admin/users">
-              Users
+              View users
             </Link>{" "}
             page.
           </li>
@@ -45,7 +45,7 @@ export default async function AdminPage() {
           href="/admin/users"
           className="inline-flex rounded-lg border border-[var(--accent)] bg-[var(--accent)]/10 px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20"
         >
-          Manage users →
+          Manage users (view & approve) →
         </Link>
       </section>
 

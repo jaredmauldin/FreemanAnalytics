@@ -10,9 +10,9 @@ export default function AdminUsersPage() {
         <Link href="/admin" className="text-sm text-[var(--accent)] hover:underline">
           ← Admin home
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">Users</h1>
+        <h1 className="mt-2 text-2xl font-semibold text-[var(--foreground)]">View users</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          View Clerk accounts, approve or hold new registrations, and revoke access. Changes apply immediately on the next request.
+          Clerk accounts for this application. Approve, hold, or revoke access.
         </p>
       </div>
 

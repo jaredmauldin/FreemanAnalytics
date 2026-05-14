@@ -70,7 +70,7 @@ export function AdminUsersClient() {
     <section className="mt-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">Users & access</h2>
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">Directory</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
             New sign-ups get <code className="rounded bg-[var(--background)] px-1">appAccess: approved</code> by default
             when the Clerk webhook is configured. Set <code className="rounded bg-[var(--background)] px-1">AUTO_APPROVE_SIGNUPS=false</code> to

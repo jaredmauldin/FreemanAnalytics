@@ -31,7 +31,7 @@ export default async function PendingApprovalPage() {
           ? "Your access to Freeman Analytics has been suspended. Contact an administrator if you believe this is a mistake."
           : displayPending
             ? strictNoAuto && raw === undefined
-              ? "Your account is almost ready. If this message persists, ask an admin to confirm the Clerk webhook (user.created) is configured, or to approve you on the Users page."
+              ? "Your account is almost ready. If this message persists, ask an admin to confirm the Clerk webhook (user.created) is configured, or to approve you under Admin → View users."
               : "An administrator has not approved your account yet. You will be redirected automatically once access is granted."
             : ""}
       </p>
