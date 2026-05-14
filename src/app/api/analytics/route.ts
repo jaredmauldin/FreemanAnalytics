@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     const selectCols =
       "dt_min, shift, equipment_type, specific_equipment, malfunction_type, pdt_edt, month, date_of_error, mttr_min, mtbf_min";
 
-    let q = supabase.from("tor_events").select(selectCols);
+    let q = supabase.from("v_tor_events_flat").select(selectCols);
     if (scope !== "all") {
       q = q.eq("upload_id", scope);
     }
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     if (from) q = q.gte("date_of_error", from);
     if (to) q = q.lte("date_of_error", to);
 
-    let metaQuery = supabase.from("tor_events").select("shift, equipment_type");
+    let metaQuery = supabase.from("v_tor_events_flat").select("shift, equipment_type");
     if (scope !== "all") {
       metaQuery = metaQuery.eq("upload_id", scope);
     }

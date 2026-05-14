@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { parseTorSheet } from "@/lib/tor/parseTor";
 import { dedupeTorRows, torRowHash } from "@/lib/tor/rowHash";
+import { mapTorInputToDbRow } from "@/lib/lookups/resolve";
 
 export const maxDuration = 120;
 
@@ -64,14 +65,15 @@ export async function POST(req: Request) {
 
     const uploadId = upload.id as string;
 
-    const withHashes = rows.map((r) => ({
-      ...r,
-      upload_id: uploadId,
-      row_hash: torRowHash(r),
-    }));
+    const cache = new Map<string, string>();
+    const withRows = [];
+    for (const r of rows) {
+      const h = torRowHash(r);
+      withRows.push(await mapTorInputToDbRow(supabase, r, uploadId, h, cache));
+    }
 
-    for (let i = 0; i < withHashes.length; i += CHUNK) {
-      const slice = withHashes.slice(i, i + CHUNK);
+    for (let i = 0; i < withRows.length; i += CHUNK) {
+      const slice = withRows.slice(i, i + CHUNK);
       const { error: upsertErr } = await supabase.from("tor_events").upsert(slice, {
         onConflict: "row_hash",
         ignoreDuplicates: false,
@@ -81,7 +83,7 @@ export async function POST(req: Request) {
         await supabase.from("uploads").delete().eq("id", uploadId);
         return NextResponse.json(
           {
-            error: `${upsertErr.message} — Ensure migration 20250512000003_tor_row_hash_upsert.sql ran (unique row_hash on tor_events).`,
+            error: `${upsertErr.message} — Ensure migrations ran (lookup_values + v_tor_events_flat).`,
           },
           { status: 500 },
         );
