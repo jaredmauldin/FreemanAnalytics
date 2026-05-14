@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts";
 import type { SupervisorOtAnalyticsPayload } from "@/lib/supervisorOt/analytics";
+import { isYearMonthKey, toggleString } from "@/lib/chartCrossFilter";
 
 const COLORS = ["#3b82f6", "#22c55e", "#f97316", "#a855f7", "#14b8a6", "#eab308", "#ef4444", "#64748b"];
+const SELECTED = "#facc15";
 
 type Props = {
   uploadScope?: "all" | string;
@@ -14,6 +16,8 @@ type Props = {
 
 export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
   const [employeeName, setEmployeeName] = useState("");
+  const [volunteeredMandated, setVolunteeredMandated] = useState("");
+  const [monthKey, setMonthKey] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [data, setData] = useState<SupervisorOtAnalyticsPayload | null>(null);
@@ -24,11 +28,13 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
     const p = new URLSearchParams();
     p.set("uploadId", uploadScope);
     if (employeeName) p.set("employeeName", employeeName);
+    if (volunteeredMandated) p.set("volunteeredMandated", volunteeredMandated);
+    if (monthKey) p.set("monthKey", monthKey);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     if (refreshKey) p.set("_r", String(refreshKey));
     return p.toString();
-  }, [uploadScope, employeeName, from, to, refreshKey]);
+  }, [uploadScope, employeeName, volunteeredMandated, monthKey, from, to, refreshKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +57,25 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
   }, [load]);
 
   const scopeLabel = uploadScope === "all" ? "All imports" : "This upload";
+
+  const clearAllFilters = useCallback(() => {
+    setEmployeeName("");
+    setVolunteeredMandated("");
+    setMonthKey("");
+    setFrom("");
+    setTo("");
+  }, []);
+
+  const filterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (employeeName) parts.push(`Employee: ${employeeName}`);
+    if (volunteeredMandated) parts.push(`Type: ${volunteeredMandated}`);
+    if (monthKey) parts.push(`Month: ${monthKey}`);
+    if (from) parts.push(`From: ${from}`);
+    if (to) parts.push(`To: ${to}`);
+    return parts;
+  }, [employeeName, volunteeredMandated, monthKey, from, to]);
+  const hasActiveFilters = filterSummary.length > 0;
 
   if (loading && !data) {
     return (
@@ -76,6 +101,23 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
 
   return (
     <div className="space-y-8">
+      {hasActiveFilters ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Cross-filter active</p>
+            <p className="mt-1 text-sm text-[var(--foreground)]">{filterSummary.join(" · ")}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">Click the same chart segment again to deselect, or clear all below.</p>
+          </div>
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90"
+          >
+            Clear selection
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <p className="text-sm text-[var(--muted)]">
           Scope: <span className="text-[var(--foreground)]">{scopeLabel}</span>
@@ -105,7 +147,10 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
           <input
             type="date"
             value={from}
-            onChange={(e) => setFrom(e.target.value)}
+            onChange={(e) => {
+              setFrom(e.target.value);
+              setMonthKey("");
+            }}
             className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
           />
         </label>
@@ -114,10 +159,20 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
           <input
             type="date"
             value={to}
-            onChange={(e) => setTo(e.target.value)}
+            onChange={(e) => {
+              setTo(e.target.value);
+              setMonthKey("");
+            }}
             className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
           />
         </label>
+        <button
+          type="button"
+          onClick={clearAllFilters}
+          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
+        >
+          Reset filters
+        </button>
       </div>
 
       {empty ? (
@@ -138,6 +193,8 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
             </div>
           </div>
 
+          <p className="text-xs text-[var(--muted)]">Tip: click a bar or pie slice to filter the other charts. Click again to clear that slice.</p>
+
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">Hours by employee</h3>
@@ -148,7 +205,21 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
                     <XAxis type="number" stroke="#94a3b8" />
                     <YAxis type="category" dataKey="name" width={120} tick={{ fill: "#94a3b8", fontSize: 10 }} />
                     <Tooltip />
-                    <Bar dataKey="hours" fill="#3b82f6" name="Hours" />
+                    <Bar
+                      dataKey="hours"
+                      name="Hours"
+                      cursor="pointer"
+                      onClick={(state) => {
+                        const s = state as { payload?: { name?: string }; name?: string };
+                        const name = s.payload?.name ?? s.name;
+                        if (!name) return;
+                        setEmployeeName((cur) => toggleString(cur, name));
+                      }}
+                    >
+                      {data.byEmployee.map((row) => (
+                        <Cell key={row.name} fill={row.name === employeeName ? SELECTED : "#3b82f6"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -167,9 +238,16 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
                       cy="50%"
                       outerRadius={90}
                       label={false}
+                      cursor="pointer"
+                      onClick={(state) => {
+                        const s = state as { payload?: { key?: string }; key?: string };
+                        const key = s.payload?.key ?? s.key;
+                        if (key === undefined || key === null) return;
+                        setVolunteeredMandated((cur) => toggleString(cur, String(key)));
+                      }}
                     >
-                      {data.byVolunteeredMandated.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      {data.byVolunteeredMandated.map((slice, i) => (
+                        <Cell key={slice.key} fill={slice.key === volunteeredMandated ? SELECTED : COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -188,7 +266,28 @@ export function SupervisorOtDashboard({ uploadScope = "all", refreshKey = 0 }: P
                     <XAxis dataKey="label" stroke="#94a3b8" />
                     <YAxis stroke="#94a3b8" />
                     <Tooltip />
-                    <Bar dataKey="hours" fill="#22c55e" name="Hours" />
+                    <Bar
+                      dataKey="hours"
+                      name="Hours"
+                      cursor="pointer"
+                      onClick={(state) => {
+                        const s = state as { payload?: { key?: string }; key?: string };
+                        const key = s.payload?.key ?? s.key;
+                        if (!key || !isYearMonthKey(key)) return;
+                        setMonthKey((cur) => {
+                          const next = toggleString(cur, key);
+                          if (next) {
+                            setFrom("");
+                            setTo("");
+                          }
+                          return next;
+                        });
+                      }}
+                    >
+                      {data.byMonth.map((row) => (
+                        <Cell key={row.key} fill={row.key === monthKey ? SELECTED : "#22c55e"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
