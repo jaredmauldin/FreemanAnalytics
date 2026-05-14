@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DATASET } from "@/lib/datasets";
+import { GridMassImport } from "@/components/GridMassImport";
 import { LOOKUP_CATEGORY } from "@/lib/lookups/categories";
 
 type LookupOption = { id: string; label: string };
@@ -261,13 +263,22 @@ export function TorDataGrid() {
             className="mt-1 w-full max-w-md rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
           />
         </div>
-        <button
-          type="button"
-          onClick={openAdd}
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
-        >
-          Add row
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <GridMassImport
+            dataset={DATASET.tor}
+            onImportComplete={() => {
+              void loadGrid();
+              void loadLookups();
+            }}
+          />
+          <button
+            type="button"
+            onClick={openAdd}
+            className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+          >
+            Add row
+          </button>
+        </div>
       </div>
 
       {err ? (
@@ -602,8 +613,8 @@ export function TorDataGrid() {
       ) : null}
 
       <p className="text-center text-xs text-[var(--muted)]">
-        <Link href="/" className="text-[var(--accent)] hover:underline">
-          ← Back to analytics
+        <Link href="/analytics" className="text-[var(--accent)] hover:underline">
+          ← Analytics
         </Link>
       </p>
     </div>

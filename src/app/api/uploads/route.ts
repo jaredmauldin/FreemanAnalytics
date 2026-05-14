@@ -6,7 +6,7 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("uploads")
-      .select("id, filename, row_count, created_at")
+      .select("id, filename, row_count, created_at, dataset")
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

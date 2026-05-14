@@ -91,8 +91,8 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
       <div className="rounded-xl border border-red-900/50 bg-red-950/30 p-6 text-red-200">
         <p className="font-medium">Could not load analytics.</p>
         <p className="mt-2 text-sm text-red-200/80">{err}</p>
-        <Link href="/" className="mt-4 inline-block text-sm text-[var(--accent)] underline">
-          Home
+        <Link href="/analytics/tor" className="mt-4 inline-block text-sm text-[var(--accent)] underline">
+          All analytics
         </Link>
       </div>
     );
@@ -106,7 +106,7 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
         <p className="text-sm text-[var(--muted)]">
           Scope: <span className="text-[var(--foreground)]">{scopeLabel}</span>
           {uploadScope !== "all" ? (
-            <Link href="/" className="ml-3 text-[var(--accent)] hover:underline">
+            <Link href="/analytics/tor" className="ml-3 text-[var(--accent)] hover:underline">
               Show all data
             </Link>
           ) : null}
@@ -116,7 +116,9 @@ export function TorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
       {empty ? (
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 text-center text-[var(--muted)]">
           <p className="text-lg font-medium text-[var(--foreground)]">No TOR rows in the database yet.</p>
-          <p className="mt-2 text-sm">Use <strong className="text-[var(--foreground)]">Import workbook</strong> below to load your spreadsheet.</p>
+          <p className="mt-2 text-sm">
+            Use <strong className="text-[var(--foreground)]">Data → TOR grid → Mass import</strong> to load a workbook.
+          </p>
         </div>
       ) : null}
 

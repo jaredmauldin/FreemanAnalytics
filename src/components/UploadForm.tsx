@@ -2,18 +2,47 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { DATASET, type Dataset } from "@/lib/datasets";
 
 type Props = {
+  dataset: Dataset;
   onImportComplete?: () => void;
 };
 
-export function UploadForm({ onImportComplete }: Props) {
+function copyForDataset(ds: Dataset): { hint: string; replaceConfirm: string; replaceBlurb: string } {
+  if (ds === DATASET.tor) {
+    return {
+      hint: "Duplicate rows (same TOR fingerprint) merge on import; last row in file wins for duplicates.",
+      replaceConfirm:
+        "Replace wipes all TOR events and TOR upload history in the database, then imports this file. Continue?",
+      replaceBlurb: "Deletes every TOR row and TOR-tagged uploads, then imports this workbook only.",
+    };
+  }
+  if (ds === DATASET.exterior_alarms) {
+    return {
+      hint: 'Expects sheet "Exterior" with the standard headers. Row fingerprint dedupes across imports.',
+      replaceConfirm:
+        "Replace wipes all exterior alarm rows and exterior upload history, then imports this file. Continue?",
+      replaceBlurb: "Deletes exterior alarm data and exterior-tagged uploads only (TOR and OT are untouched).",
+    };
+  }
+  return {
+    hint: 'Expects sheet "Data" with Name, Date, Hours, Volunteered/Mandated, TimeStamp.',
+    replaceConfirm:
+      "Replace wipes all supervisor OT rows and OT upload history, then imports this file. Continue?",
+    replaceBlurb: "Deletes overtime entries and OT-tagged uploads only.",
+  };
+}
+
+export function UploadForm({ dataset, onImportComplete }: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const copy = copyForDataset(dataset);
+  const inputId = `upload-file-${dataset}`;
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     setMessage(null);
@@ -53,6 +82,7 @@ export function UploadForm({ onImportComplete }: Props) {
       const up = new FormData();
       up.append("file", pendingFile);
       up.append("mode", mode);
+      up.append("dataset", dataset);
       const res = await fetch("/api/upload", { method: "POST", body: up });
       const json = (await res.json()) as { error?: string; uploadId?: string };
       if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : "Upload failed.");
@@ -72,11 +102,11 @@ export function UploadForm({ onImportComplete }: Props) {
     <div className="relative">
       <form ref={formRef} className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end" onSubmit={(e) => e.preventDefault()}>
         <div className="flex-1 min-w-[200px]">
-          <label htmlFor="tor-file" className="sr-only">
+          <label htmlFor={inputId} className="sr-only">
             Workbook file
           </label>
           <input
-            id="tor-file"
+            id={inputId}
             name="file"
             type="file"
             accept=".xlsm,.xlsx"
@@ -113,7 +143,7 @@ export function UploadForm({ onImportComplete }: Props) {
               How should this file be applied?
             </h3>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              <span className="font-medium text-[var(--foreground)]">{pendingFile?.name}</span> — Duplicate rows (same TOR fingerprint) are merged. Within one file, the last occurrence wins.
+              <span className="font-medium text-[var(--foreground)]">{pendingFile?.name}</span> — {copy.hint}
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <button
@@ -129,13 +159,13 @@ export function UploadForm({ onImportComplete }: Props) {
                 type="button"
                 disabled={busy}
                 onClick={() => {
-                  if (!confirm("Replace wipes all TOR data and uploads in the database, then imports this file. Continue?")) return;
+                  if (!confirm(copy.replaceConfirm)) return;
                   void runImport("replace");
                 }}
                 className="rounded-xl border border-red-900/50 bg-red-950/20 px-4 py-3 text-left text-sm hover:border-red-500 disabled:opacity-50"
               >
                 <span className="font-semibold text-red-200">Replace all</span>
-                <span className="mt-1 block text-red-200/80">Delete every TOR row and import history, then import this workbook only.</span>
+                <span className="mt-1 block text-red-200/80">{copy.replaceBlurb}</span>
               </button>
               <button
                 type="button"

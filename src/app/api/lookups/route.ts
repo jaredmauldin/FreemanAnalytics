@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { LOOKUP_CATEGORY } from "@/lib/lookups/resolve";
 
 export type LookupsResponse = Record<string, { id: string; label: string }[]>;
 
@@ -15,9 +14,6 @@ export async function GET() {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const out: LookupsResponse = {};
-    for (const c of Object.values(LOOKUP_CATEGORY)) {
-      out[c] = [];
-    }
     for (const row of data ?? []) {
       const cat = row.category as string;
       if (!out[cat]) out[cat] = [];

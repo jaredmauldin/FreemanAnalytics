@@ -17,11 +17,11 @@ export function SiteHeader() {
       <div className="mx-auto max-w-6xl px-4 py-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/" className="text-sm font-semibold tracking-tight text-white hover:text-blue-200">
+            <Link href="/analytics" className="text-sm font-semibold tracking-tight text-white hover:text-blue-200">
               Freeman Analytics
             </Link>
-            <span className="text-xs text-zinc-500">TOR</span>
-            <AppNav isSignedIn={Boolean(isLoaded && isSignedIn)} isAdmin={Boolean(isAdmin)} />
+            <span className="text-xs text-zinc-500">Ops</span>
+            {isLoaded && isSignedIn ? <AppNav isAdmin={Boolean(isAdmin)} /> : null}
           </div>
 
           <nav className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto" aria-label="Account">
