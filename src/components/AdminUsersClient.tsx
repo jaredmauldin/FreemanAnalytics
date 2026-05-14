@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { useCallback, useEffect, useState } from "react";
 
 type Row = {
@@ -14,6 +15,7 @@ type Row = {
 };
 
 export function AdminUsersClient() {
+  const { user: me } = useUser();
   const [users, setUsers] = useState<Row[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -44,15 +46,15 @@ export function AdminUsersClient() {
     void load();
   }, [load]);
 
-  const setAccess = useCallback(
-    async (userId: string, appAccess: "approved" | "pending" | "revoked") => {
+  const patchUser = useCallback(
+    async (userId: string, body: { appAccess?: "approved" | "pending" | "revoked"; role?: "admin" | "user" }) => {
       setBusyId(userId);
       setErr(null);
       try {
         const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appAccess }),
+          body: JSON.stringify(body),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : res.statusText);
@@ -66,15 +68,22 @@ export function AdminUsersClient() {
     [load],
   );
 
+  const setAccess = useCallback(
+    async (userId: string, appAccess: "approved" | "pending" | "revoked") => {
+      await patchUser(userId, { appAccess });
+    },
+    [patchUser],
+  );
+
   return (
     <section className="mt-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Directory</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
-            New sign-ups get <code className="rounded bg-[var(--background)] px-1">appAccess: approved</code> by default
-            when the Clerk webhook is configured. Set <code className="rounded bg-[var(--background)] px-1">AUTO_APPROVE_SIGNUPS=false</code> to
-            require approval here.
+            Set <strong className="text-[var(--foreground)]">Clerk role</strong> (public metadata{" "}
+            <code className="rounded bg-[var(--background)] px-1">role</code>) for Admin vs User. App access (
+            <code className="rounded bg-[var(--background)] px-1">appAccess</code>) controls who can open Data / Analytics.
           </p>
         </div>
         <p className="text-sm text-[var(--muted)]">
@@ -91,7 +100,7 @@ export function AdminUsersClient() {
           <thead>
             <tr className="border-b border-[var(--border)] text-xs uppercase tracking-wide text-[var(--muted)]">
               <th className="px-4 py-3 font-medium">User</th>
-              <th className="px-4 py-3 font-medium">Role</th>
+              <th className="px-4 py-3 font-medium">Clerk role</th>
               <th className="px-4 py-3 font-medium">Access</th>
               <th className="px-4 py-3 font-medium">Joined</th>
               <th className="px-4 py-3 font-medium text-right">Actions</th>
@@ -128,7 +137,27 @@ export function AdminUsersClient() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-[var(--foreground)]">{u.role}</td>
+                    <td className="px-4 py-3">
+                      <label className="sr-only" htmlFor={`role-${u.id}`}>
+                        Clerk role for {u.email ?? u.id}
+                      </label>
+                      <select
+                        id={`role-${u.id}`}
+                        value={u.role}
+                        disabled={busy}
+                        onChange={(e) => {
+                          const v = e.target.value as "admin" | "user";
+                          if (v === u.role) return;
+                          void patchUser(u.id, { role: v });
+                        }}
+                        className="max-w-[160px] rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm text-[var(--foreground)] disabled:opacity-50"
+                      >
+                        <option value="user" disabled={Boolean(me?.id === u.id && u.role === "admin")}>
+                          User
+                        </option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={
