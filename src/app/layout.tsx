@@ -3,8 +3,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Freeman Analytics — TOR (Auth v2)",
-  description: "Upload injection molding TOR spreadsheets and explore downtime analytics.",
+  title: "Freeman Analytics",
+  description:
+    "Manufacturing intelligence: TOR downtime, exterior alarms & faults, and supervisor overtime—imports, dashboards, and governed lookup data in one place.",
 };
 
 export default function RootLayout({

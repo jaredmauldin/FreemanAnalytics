@@ -2,7 +2,8 @@ import { SignUp } from "@clerk/nextjs";
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+    <div className="flex w-full max-w-md flex-col items-center">
+      <p className="mb-4 hidden text-center text-sm text-zinc-400 lg:block">Create your account</p>
       <SignUp
         appearance={{
           variables: { colorPrimary: "#3b82f6", colorBackground: "#141a22", colorInputBackground: "#0c0f14" },
@@ -15,7 +16,7 @@ export default function SignUpPage() {
           },
         }}
         signInUrl="/sign-in"
-        forceRedirectUrl="/"
+        forceRedirectUrl="/analytics"
       />
     </div>
   );
