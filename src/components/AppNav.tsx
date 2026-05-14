@@ -22,7 +22,12 @@ const ANALYTICS_LINKS = [
   { href: "/analytics/supervisor-ot", label: "Supervisor OT" },
 ] as const;
 
-function pathMatchesSection(pathname: string, prefix: "/data" | "/analytics"): boolean {
+const ADMIN_LINKS = [
+  { href: "/admin", label: "Overview" },
+  { href: "/admin/users", label: "View users" },
+] as const;
+
+function pathMatchesSection(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
@@ -34,7 +39,7 @@ function NavDropdown({
 }: {
   label: string;
   pathname: string;
-  sectionPrefix: "/data" | "/analytics";
+  sectionPrefix: string;
   links: readonly { href: string; label: string }[];
 }) {
   const [open, setOpen] = useState(false);
@@ -59,14 +64,16 @@ function NavDropdown({
     };
   }, [open, close]);
 
+  const menuId = sectionPrefix.slice(1).replace(/\//g, "-");
+
   return (
     <div ref={wrapRef} className="relative">
       <button
         type="button"
         aria-expanded={open}
         aria-haspopup="true"
-        aria-controls={`submenu-${sectionPrefix.slice(1)}`}
-        id={`menubutton-${sectionPrefix.slice(1)}`}
+        aria-controls={`submenu-${menuId}`}
+        id={`menubutton-${menuId}`}
         onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-0.5 rounded-md px-2 py-1 transition-colors ${
           sectionActive ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"
@@ -79,9 +86,9 @@ function NavDropdown({
       </button>
       {open ? (
         <div
-          id={`submenu-${sectionPrefix.slice(1)}`}
+          id={`submenu-${menuId}`}
           role="menu"
-          aria-labelledby={`menubutton-${sectionPrefix.slice(1)}`}
+          aria-labelledby={`menubutton-${menuId}`}
           className="absolute left-0 top-[calc(100%+4px)] z-[200] min-w-[220px] rounded-lg border border-[#243041] bg-[#0f1623] py-1 shadow-xl"
         >
           {links.map((item) => {
@@ -109,20 +116,6 @@ function NavDropdown({
   );
 }
 
-function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
-  const active = pathname === href || pathname.startsWith(`${href}/`);
-  return (
-    <Link
-      href={href}
-      className={`rounded-md px-2 py-1 transition-colors ${
-        active ? "bg-white/10 text-white" : "text-zinc-400 hover:text-white"
-      }`}
-    >
-      {label}
-    </Link>
-  );
-}
-
 export function AppNav({ isAdmin }: Props) {
   const pathname = usePathname() ?? "";
 
@@ -130,12 +123,7 @@ export function AppNav({ isAdmin }: Props) {
     <nav className="flex flex-wrap items-center gap-1 text-sm font-medium" aria-label="Main">
       <NavDropdown label="Data" pathname={pathname} sectionPrefix="/data" links={DATA_LINKS} />
       <NavDropdown label="Analytics" pathname={pathname} sectionPrefix="/analytics" links={ANALYTICS_LINKS} />
-      {isAdmin ? (
-        <>
-          <NavLink href="/admin" label="Admin" pathname={pathname} />
-          <NavLink href="/admin/users" label="Users" pathname={pathname} />
-        </>
-      ) : null}
+      {isAdmin ? <NavDropdown label="Admin" pathname={pathname} sectionPrefix="/admin" links={ADMIN_LINKS} /> : null}
     </nav>
   );
 }
