@@ -21,7 +21,7 @@ export function isBootstrapAdminUserId(userId: string | undefined | null): boole
   if (!raw?.trim()) return false;
   return raw
     .split(",")
-    .map((s) => s.trim())
+    .map((s) => s.trim().replace(/^["']|["']$/g, ""))
     .filter(Boolean)
     .includes(userId);
 }
