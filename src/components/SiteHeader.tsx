@@ -5,16 +5,21 @@ import { usePathname } from "next/navigation";
 import { UserButton, useAuth, useUser } from "@clerk/nextjs";
 import { AppNav } from "@/components/AppNav";
 import { FreemanBrand } from "@/components/FreemanBrand";
+import { isAdminSession } from "@/lib/auth/roles";
 
 /**
  * Signed-in app chrome: Freeman Analytics brand + nav + account.
+ * `serverIsAdmin` comes from Clerk on the server so the Admin menu shows even when the client
+ * session has not hydrated `publicMetadata` yet.
  */
-export function SiteHeader() {
+export function SiteHeader({ serverIsAdmin = false }: { serverIsAdmin?: boolean }) {
   const pathname = usePathname() ?? "";
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
-  const isAdmin = user?.publicMetadata?.role === "admin";
+  const clientAdmin = isAdminSession({ publicMetadata: user?.publicMetadata }, user?.id);
+  const isAdmin = serverIsAdmin || clientAdmin;
   const hideMainNav = pathname.startsWith("/pending-approval");
+  const showMainNav = !hideMainNav && (serverIsAdmin || (isLoaded && isSignedIn));
 
   return (
     <header className="relative z-[100] border-b border-[var(--border)] bg-[#0a0e16] shadow-[0_1px_0_rgba(59,130,246,0.08)]">
@@ -27,11 +32,11 @@ export function SiteHeader() {
             <p className="hidden text-xs text-zinc-500 sm:block sm:max-w-[200px] md:max-w-xs">
               TOR · Exterior alarms · Supervisor OT
             </p>
-            {isLoaded && isSignedIn && !hideMainNav ? <AppNav isAdmin={Boolean(isAdmin)} /> : null}
+            {showMainNav ? <AppNav isAdmin={isAdmin} /> : null}
           </div>
 
           <nav className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto" aria-label="Account">
-            {isLoaded && isSignedIn ? (
+            {showMainNav ? (
               <UserButton
                 appearance={{
                   elements: {

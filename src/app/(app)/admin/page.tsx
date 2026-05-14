@@ -34,8 +34,11 @@ export default async function AdminPage() {
             page.
           </li>
           <li>
-            <strong className="text-[var(--foreground)]">Admins</strong> still use Clerk public metadata{" "}
-            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">{`{ "role": "admin" }`}</code> (Clerk Dashboard → user → Metadata → Public).
+            <strong className="text-[var(--foreground)]">Admins</strong> use Clerk public metadata{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">{`{ "role": "admin" }`}</code>{" "}
+            (Dashboard → Users → your account → Metadata → Public). The nav reads this from the server, so after saving you may need a refresh. If it still does not show, add your Clerk user id to{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">CLERK_ADMIN_USER_IDS</code> in{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">.env</code> (see <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">.env.example</code>).
           </li>
         </ul>
       </section>

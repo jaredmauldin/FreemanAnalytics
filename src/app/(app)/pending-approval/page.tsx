@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function PendingApprovalPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
-  if (hasFullAppAccess(user)) redirect("/analytics");
+  if (hasFullAppAccess(user, user.id)) redirect("/analytics");
 
   const access = getAppAccessFromUser(user);
   const strictNoAuto = process.env.AUTO_APPROVE_SIGNUPS === "false";

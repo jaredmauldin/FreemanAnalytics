@@ -27,7 +27,7 @@ export default clerkMiddleware(async (auth, req) => {
   try {
     const client = await clerkClient();
     const user = await client.users.getUser(userId);
-    if (hasFullAppAccess(user)) {
+    if (hasFullAppAccess(user, userId)) {
       return NextResponse.next();
     }
     return NextResponse.redirect(new URL("/pending-approval", req.url));

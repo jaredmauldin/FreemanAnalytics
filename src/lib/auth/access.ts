@@ -1,4 +1,4 @@
-import { isAdminUser } from "@/lib/auth/roles";
+import { isAdminSession } from "@/lib/auth/roles";
 
 export type AppAccessStatus = "approved" | "pending" | "revoked";
 
@@ -12,9 +12,9 @@ export function getAppAccessFromUser(user: MetadataUser): AppAccessStatus {
 }
 
 /** Admins always pass. When AUTO_APPROVE_SIGNUPS=false, only explicit `appAccess: "approved"` allows the app (webhook sets pending first). */
-export function hasFullAppAccess(user: MetadataUser): boolean {
+export function hasFullAppAccess(user: MetadataUser, clerkUserId?: string | null): boolean {
   if (!user) return false;
-  if (isAdminUser(user)) return true;
+  if (isAdminSession(user, clerkUserId)) return true;
   if (process.env.AUTO_APPROVE_SIGNUPS === "false") {
     return user.publicMetadata?.appAccess === "approved";
   }
