@@ -16,11 +16,25 @@ export async function GET(req: Request) {
     employeeName: url.searchParams.get("employeeName") || undefined,
     from: url.searchParams.get("from") || undefined,
     to: url.searchParams.get("to") || undefined,
+    volunteeredMandated: url.searchParams.get("volunteeredMandated") || undefined,
+    monthKey: url.searchParams.get("monthKey") || undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { uploadId: scope, employeeName, from, to } = parsed.data;
+  const { uploadId: scope, employeeName, from, to, volunteeredMandated, monthKey } = parsed.data;
+
+  function otMonthBounds(key: string): { start: string; end: string } | null {
+    const m = /^(\d{4})-(\d{2})$/.exec(key);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    if (mo < 1 || mo > 12) return null;
+    const start = `${key}-01`;
+    const last = new Date(Date.UTC(y, mo, 0));
+    const end = `${y}-${String(mo).padStart(2, "0")}-${String(last.getUTCDate()).padStart(2, "0")}`;
+    return { start, end };
+  }
 
   try {
     const supabase = getSupabaseAdmin();
@@ -29,6 +43,16 @@ export async function GET(req: Request) {
     let q = supabase.from("v_supervisor_ot_flat").select(cols);
     if (scope !== "all") q = q.eq("upload_id", scope);
     if (employeeName) q = q.eq("employee_name", employeeName);
+    if (volunteeredMandated) {
+      if (volunteeredMandated === "—") q = q.is("volunteered_mandated", null);
+      else q = q.eq("volunteered_mandated", volunteeredMandated);
+    }
+    if (monthKey) {
+      const b = otMonthBounds(monthKey);
+      if (b) {
+        q = q.gte("work_date", b.start).lte("work_date", b.end);
+      }
+    }
     if (from) q = q.gte("work_date", from);
     if (to) q = q.lte("work_date", to);
 

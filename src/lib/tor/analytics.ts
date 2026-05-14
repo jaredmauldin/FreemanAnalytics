@@ -6,6 +6,14 @@ export const analyticsQuerySchema = z.object({
   equipmentType: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  /** Chart drill: exact specific_equipment match */
+  specificEquipment: z.string().optional(),
+  /** Chart drill: exact malfunction_type match */
+  malfunctionType: z.string().optional(),
+  /** Chart drill: PDT/EDT bucket label */
+  pdtEdt: z.string().optional(),
+  /** Chart drill: calendar month YYYY-MM (UTC) */
+  monthKey: z.string().optional(),
 });
 
 export type TorEventRow = {

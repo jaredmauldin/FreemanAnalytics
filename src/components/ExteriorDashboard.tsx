@@ -4,8 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from "recharts";
 import type { ExteriorAnalyticsPayload } from "@/lib/exterior/analytics";
+import { toggleString } from "@/lib/chartCrossFilter";
 
 const COLORS = ["#3b82f6", "#22c55e", "#f97316", "#a855f7", "#14b8a6", "#eab308", "#ef4444", "#64748b"];
+const SELECTED = "#facc15";
 
 type Props = {
   uploadScope?: "all" | string;
@@ -14,6 +16,8 @@ type Props = {
 
 export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props) {
   const [department, setDepartment] = useState("");
+  const [alarmFault, setAlarmFault] = useState("");
+  const [rootCause, setRootCause] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [data, setData] = useState<ExteriorAnalyticsPayload | null>(null);
@@ -24,11 +28,13 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
     const p = new URLSearchParams();
     p.set("uploadId", uploadScope);
     if (department) p.set("department", department);
+    if (alarmFault) p.set("alarmFault", alarmFault);
+    if (rootCause) p.set("rootCause", rootCause);
     if (from) p.set("from", from);
     if (to) p.set("to", to);
     if (refreshKey) p.set("_r", String(refreshKey));
     return p.toString();
-  }, [uploadScope, department, from, to, refreshKey]);
+  }, [uploadScope, department, alarmFault, rootCause, from, to, refreshKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +57,25 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
   }, [load]);
 
   const scopeLabel = uploadScope === "all" ? "All imports" : "This upload";
+
+  const clearAllFilters = useCallback(() => {
+    setDepartment("");
+    setAlarmFault("");
+    setRootCause("");
+    setFrom("");
+    setTo("");
+  }, []);
+
+  const filterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (department) parts.push(`Department: ${department}`);
+    if (alarmFault) parts.push(`Alarm / fault: ${alarmFault}`);
+    if (rootCause) parts.push(`Root cause: ${rootCause}`);
+    if (from) parts.push(`From: ${from}`);
+    if (to) parts.push(`To: ${to}`);
+    return parts;
+  }, [department, alarmFault, rootCause, from, to]);
+  const hasActiveFilters = filterSummary.length > 0;
 
   if (loading && !data) {
     return (
@@ -76,6 +101,23 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
 
   return (
     <div className="space-y-8">
+      {hasActiveFilters ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/5 px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Cross-filter active</p>
+            <p className="mt-1 text-sm text-[var(--foreground)]">{filterSummary.join(" · ")}</p>
+            <p className="mt-1 text-xs text-[var(--muted)]">Click the same chart segment again to deselect, or clear all below.</p>
+          </div>
+          <button
+            type="button"
+            onClick={clearAllFilters}
+            className="shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] hover:opacity-90"
+          >
+            Clear selection
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
         <p className="text-sm text-[var(--muted)]">
           Scope: <span className="text-[var(--foreground)]">{scopeLabel}</span>
@@ -118,6 +160,13 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
             className="ml-2 rounded border border-[var(--border)] bg-[var(--background)] px-2 py-1 text-sm"
           />
         </label>
+        <button
+          type="button"
+          onClick={clearAllFilters}
+          className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--foreground)]"
+        >
+          Reset filters
+        </button>
       </div>
 
       {empty ? (
@@ -134,6 +183,8 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
             </div>
           </div>
 
+          <p className="text-xs text-[var(--muted)]">Tip: click a bar or pie slice to filter the other charts. Click again to clear that slice.</p>
+
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">Top alarm / fault codes</h3>
@@ -144,7 +195,21 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
                     <XAxis type="number" stroke="#94a3b8" />
                     <YAxis type="category" dataKey="name" width={140} tick={{ fill: "#94a3b8", fontSize: 10 }} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" name="Count" />
+                    <Bar
+                      dataKey="count"
+                      name="Count"
+                      cursor="pointer"
+                      onClick={(state) => {
+                        const s = state as { payload?: { name?: string }; name?: string };
+                        const name = s.payload?.name ?? s.name;
+                        if (!name) return;
+                        setAlarmFault((cur) => toggleString(cur, name));
+                      }}
+                    >
+                      {data.byAlarmFault.map((row) => (
+                        <Cell key={row.name} fill={row.name === alarmFault ? SELECTED : "#3b82f6"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -163,9 +228,16 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
                       cy="50%"
                       outerRadius={90}
                       label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      cursor="pointer"
+                      onClick={(state) => {
+                        const s = state as { payload?: { name?: string }; name?: string };
+                        const name = s.payload?.name ?? s.name;
+                        if (!name) return;
+                        setDepartment((cur) => toggleString(cur, name));
+                      }}
                     >
-                      {data.byDepartment.map((_, i) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      {data.byDepartment.map((slice, i) => (
+                        <Cell key={slice.name} fill={slice.name === department ? SELECTED : COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -184,7 +256,21 @@ export function ExteriorDashboard({ uploadScope = "all", refreshKey = 0 }: Props
                     <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 10 }} interval={0} angle={-25} textAnchor="end" height={70} />
                     <YAxis stroke="#94a3b8" />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#22c55e" name="Count" />
+                    <Bar
+                      dataKey="count"
+                      name="Count"
+                      cursor="pointer"
+                      onClick={(state) => {
+                        const s = state as { payload?: { name?: string }; name?: string };
+                        const name = s.payload?.name ?? s.name;
+                        if (!name) return;
+                        setRootCause((cur) => toggleString(cur, name));
+                      }}
+                    >
+                      {data.byRootCause.map((row) => (
+                        <Cell key={row.name} fill={row.name === rootCause ? SELECTED : "#22c55e"} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>

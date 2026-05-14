@@ -13,11 +13,28 @@ export async function GET(req: Request) {
     equipmentType: url.searchParams.get("equipmentType") || undefined,
     from: url.searchParams.get("from") || undefined,
     to: url.searchParams.get("to") || undefined,
+    specificEquipment: url.searchParams.get("specificEquipment") || undefined,
+    malfunctionType: url.searchParams.get("malfunctionType") || undefined,
+    pdtEdt: url.searchParams.get("pdtEdt") || undefined,
+    monthKey: url.searchParams.get("monthKey") || undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { uploadId: scope, shift, equipmentType, from, to } = parsed.data;
+  const { uploadId: scope, shift, equipmentType, from, to, specificEquipment, malfunctionType, pdtEdt, monthKey } =
+    parsed.data;
+
+  function torMonthBounds(key: string): { start: string; end: string } | null {
+    const m = /^(\d{4})-(\d{2})$/.exec(key);
+    if (!m) return null;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    if (mo < 1 || mo > 12) return null;
+    const start = `${key}-01`;
+    const last = new Date(Date.UTC(y, mo, 0));
+    const end = `${y}-${String(mo).padStart(2, "0")}-${String(last.getUTCDate()).padStart(2, "0")}`;
+    return { start, end };
+  }
 
   try {
     const supabase = getSupabaseAdmin();
@@ -31,6 +48,15 @@ export async function GET(req: Request) {
 
     if (shift) q = q.eq("shift", shift);
     if (equipmentType) q = q.eq("equipment_type", equipmentType);
+    if (specificEquipment) q = q.eq("specific_equipment", specificEquipment);
+    if (malfunctionType) q = q.eq("malfunction_type", malfunctionType);
+    if (pdtEdt) q = q.eq("pdt_edt", pdtEdt);
+    if (monthKey) {
+      const b = torMonthBounds(monthKey);
+      if (b) {
+        q = q.gte("date_of_error", b.start).lte("date_of_error", b.end);
+      }
+    }
     if (from) q = q.gte("date_of_error", from);
     if (to) q = q.lte("date_of_error", to);
 

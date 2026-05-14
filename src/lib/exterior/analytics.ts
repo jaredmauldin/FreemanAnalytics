@@ -5,6 +5,8 @@ export const exteriorAnalyticsQuerySchema = z.object({
   department: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  alarmFault: z.string().optional(),
+  rootCause: z.string().optional(),
 });
 
 export type ExteriorFlatRow = {
@@ -49,6 +51,12 @@ export function buildExteriorAnalytics(
   let filtered = rows;
   if (filters.department) {
     filtered = filtered.filter((r) => r.department === filters.department);
+  }
+  if (filters.alarmFault) {
+    filtered = filtered.filter((r) => (r.alarm_fault ?? "") === filters.alarmFault);
+  }
+  if (filters.rootCause) {
+    filtered = filtered.filter((r) => (r.root_cause ?? "") === filters.rootCause);
   }
   if (filters.from) {
     filtered = filtered.filter((r) => (r.created_at ?? "").slice(0, 10) >= filters.from!);

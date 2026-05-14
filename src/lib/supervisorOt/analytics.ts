@@ -5,6 +5,9 @@ export const supervisorOtAnalyticsQuerySchema = z.object({
   employeeName: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  volunteeredMandated: z.string().optional(),
+  /** YYYY-MM work_date month (UTC) */
+  monthKey: z.string().optional(),
 });
 
 export type SupervisorOtFlatRow = {
@@ -43,6 +46,15 @@ export function buildSupervisorOtAnalytics(
   let filtered = rows;
   if (filters.employeeName) {
     filtered = filtered.filter((r) => r.employee_name === filters.employeeName);
+  }
+  if (filters.volunteeredMandated) {
+    filtered = filtered.filter((r) => (r.volunteered_mandated ?? "—") === filters.volunteeredMandated);
+  }
+  if (filters.monthKey) {
+    filtered = filtered.filter((r) => {
+      const mk = monthKey(r.work_date);
+      return mk?.key === filters.monthKey;
+    });
   }
   if (filters.from) {
     filtered = filtered.filter((r) => (r.work_date ?? "") >= filters.from!);

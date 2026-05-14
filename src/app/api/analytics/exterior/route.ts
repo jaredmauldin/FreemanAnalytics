@@ -12,11 +12,13 @@ export async function GET(req: Request) {
     department: url.searchParams.get("department") || undefined,
     from: url.searchParams.get("from") || undefined,
     to: url.searchParams.get("to") || undefined,
+    alarmFault: url.searchParams.get("alarmFault") || undefined,
+    rootCause: url.searchParams.get("rootCause") || undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { uploadId: scope, department, from, to } = parsed.data;
+  const { uploadId: scope, department, from, to, alarmFault, rootCause } = parsed.data;
 
   try {
     const supabase = getSupabaseAdmin();
@@ -25,6 +27,8 @@ export async function GET(req: Request) {
     let q = supabase.from("v_exterior_alarms_flat").select(cols);
     if (scope !== "all") q = q.eq("upload_id", scope);
     if (department) q = q.eq("department", department);
+    if (alarmFault) q = q.eq("alarm_fault", alarmFault);
+    if (rootCause) q = q.eq("root_cause", rootCause);
     if (from) q = q.gte("created_at", `${from}T00:00:00.000Z`);
     if (to) q = q.lte("created_at", `${to}T23:59:59.999Z`);
 
