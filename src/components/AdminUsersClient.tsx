@@ -30,9 +30,18 @@ export function AdminUsersClient() {
     setErr(null);
     try {
       const res = await fetch(`/api/admin/users?limit=${limit}&offset=${offset}`, { cache: "no-store" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : res.statusText);
-      setUsers(json.users as Row[]);
+      const json = (await res.json()) as {
+        error?: unknown;
+        hint?: unknown;
+        users?: Row[];
+        totalCount?: unknown;
+      };
+      if (!res.ok) {
+        const errMsg = typeof json.error === "string" ? json.error : res.statusText;
+        const hint = typeof json.hint === "string" ? json.hint : "";
+        throw new Error(hint ? `${errMsg} — ${hint}` : errMsg);
+      }
+      setUsers(Array.isArray(json.users) ? json.users : []);
       setTotalCount(typeof json.totalCount === "number" ? json.totalCount : 0);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to load users.");
@@ -56,8 +65,12 @@ export function AdminUsersClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        const json = await res.json();
-        if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : res.statusText);
+        const json = (await res.json()) as { error?: unknown; hint?: unknown };
+        if (!res.ok) {
+          const errMsg = typeof json.error === "string" ? json.error : res.statusText;
+          const hint = typeof json.hint === "string" ? json.hint : "";
+          throw new Error(hint ? `${errMsg} — ${hint}` : errMsg);
+        }
         await load();
       } catch (e) {
         setErr(e instanceof Error ? e.message : "Update failed.");

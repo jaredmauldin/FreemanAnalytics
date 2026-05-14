@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { AdminAccessNotice } from "@/components/AdminAccessNotice";
 import { SiteHeader } from "@/components/SiteHeader";
 import { isAdminSession } from "@/lib/auth/roles";
 
@@ -20,6 +22,9 @@ export default async function AppShellLayout({ children }: { children: React.Rea
   return (
     <>
       <SiteHeader serverIsAdmin={serverIsAdmin} />
+      <Suspense fallback={null}>
+        <AdminAccessNotice />
+      </Suspense>
       {children}
     </>
   );
