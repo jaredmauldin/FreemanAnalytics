@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { UserButton, useAuth, useUser } from "@clerk/nextjs";
 import { AppNav } from "@/components/AppNav";
 import { FreemanBrand } from "@/components/FreemanBrand";
@@ -9,9 +10,11 @@ import { FreemanBrand } from "@/components/FreemanBrand";
  * Signed-in app chrome: Freeman Analytics brand + nav + account.
  */
 export function SiteHeader() {
+  const pathname = usePathname() ?? "";
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
   const isAdmin = user?.publicMetadata?.role === "admin";
+  const hideMainNav = pathname.startsWith("/pending-approval");
 
   return (
     <header className="relative z-[100] border-b border-[var(--border)] bg-[#0a0e16] shadow-[0_1px_0_rgba(59,130,246,0.08)]">
@@ -24,7 +27,7 @@ export function SiteHeader() {
             <p className="hidden text-xs text-zinc-500 sm:block sm:max-w-[200px] md:max-w-xs">
               TOR · Exterior alarms · Supervisor OT
             </p>
-            {isLoaded && isSignedIn ? <AppNav isAdmin={Boolean(isAdmin)} /> : null}
+            {isLoaded && isSignedIn && !hideMainNav ? <AppNav isAdmin={Boolean(isAdmin)} /> : null}
           </div>
 
           <nav className="flex flex-wrap items-center justify-end gap-2 sm:ml-auto" aria-label="Account">

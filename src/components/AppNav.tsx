@@ -130,7 +130,12 @@ export function AppNav({ isAdmin }: Props) {
     <nav className="flex flex-wrap items-center gap-1 text-sm font-medium" aria-label="Main">
       <NavDropdown label="Data" pathname={pathname} sectionPrefix="/data" links={DATA_LINKS} />
       <NavDropdown label="Analytics" pathname={pathname} sectionPrefix="/analytics" links={ANALYTICS_LINKS} />
-      {isAdmin ? <NavLink href="/admin" label="Admin" pathname={pathname} /> : null}
+      {isAdmin ? (
+        <>
+          <NavLink href="/admin" label="Admin" pathname={pathname} />
+          <NavLink href="/admin/users" label="Users" pathname={pathname} />
+        </>
+      ) : null}
     </nav>
   );
 }

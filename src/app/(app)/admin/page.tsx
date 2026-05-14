@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { LookupMetadataAdmin } from "@/components/LookupMetadataAdmin";
 import { getRoleFromUser } from "@/lib/auth/roles";
@@ -15,21 +16,37 @@ export default async function AdminPage() {
       </p>
 
       <section className="mt-8 rounded-xl border border-[var(--border)] bg-[var(--card)] p-6 text-sm text-[var(--muted)]">
-        <h2 className="text-base font-semibold text-[var(--foreground)]">How roles work</h2>
+        <h2 className="text-base font-semibold text-[var(--foreground)]">Access & sign-up</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5">
           <li>
-            <strong className="text-[var(--foreground)]">Standard users</strong> can self-register via{" "}
-            <strong className="text-[var(--foreground)]">Sign up</strong> and use Data and Analytics.
+            <strong className="text-[var(--foreground)]">Webhook</strong>: In Clerk → Webhooks, add{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">/api/webhooks/clerk</code> and subscribe to{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">user.created</code>. Paste the signing secret into{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">CLERK_WEBHOOK_SIGNING_SECRET</code> in your deployment env.
           </li>
           <li>
-            <strong className="text-[var(--foreground)]">Admins</strong> are assigned in the Clerk dashboard: open the user →{" "}
-            <strong className="text-[var(--foreground)]">Metadata</strong> → <strong className="text-[var(--foreground)]">Public</strong> → set JSON{" "}
-            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">{`{ "role": "admin" }`}</code> → save. They then see Admin in the menu and can edit lookup metadata below.
+            By default <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">AUTO_APPROVE_SIGNUPS</code> is on: new users get{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">appAccess: approved</code> automatically. Set it to{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">false</code> to require approval on the{" "}
+            <Link className="text-[var(--accent)] hover:underline" href="/admin/users">
+              Users
+            </Link>{" "}
+            page.
           </li>
           <li>
-            In Clerk, enable <strong className="text-[var(--foreground)]">Sign up</strong> under Authentication so anyone can create a standard account.
+            <strong className="text-[var(--foreground)]">Admins</strong> still use Clerk public metadata{" "}
+            <code className="rounded bg-[var(--background)] px-1 text-[var(--foreground)]">{`{ "role": "admin" }`}</code> (Clerk Dashboard → user → Metadata → Public).
           </li>
         </ul>
+      </section>
+
+      <section className="mt-6 flex flex-wrap gap-3">
+        <Link
+          href="/admin/users"
+          className="inline-flex rounded-lg border border-[var(--accent)] bg-[var(--accent)]/10 px-4 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent)]/20"
+        >
+          Manage users →
+        </Link>
       </section>
 
       <LookupMetadataAdmin />
