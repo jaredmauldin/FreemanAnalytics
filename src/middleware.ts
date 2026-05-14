@@ -13,7 +13,15 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
   }
 
-  await auth.protect();
+  /**
+   * Clerk’s default `auth.protect()` returns a synthetic 404 when the request does not look like a
+   * “document” navigation (missing `Accept: text/html` or `Sec-Fetch-Dest: document`). That 404 can
+   * be cached by CDNs and breaks real users (e.g. /admin/users on Vercel). Always send unauthenticated
+   * traffic to sign-in with an explicit return URL instead.
+   */
+  const signIn = new URL("/sign-in", req.url);
+  signIn.searchParams.set("redirect_url", req.nextUrl.href);
+  await auth.protect({ unauthenticatedUrl: signIn.toString() });
 
   if (isPendingApprovalRoute(req)) {
     return NextResponse.next();
